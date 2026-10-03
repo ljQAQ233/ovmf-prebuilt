@@ -61,29 +61,53 @@ jobs:
         run: |
           make -C BaseTools/Source/C -j$(nproc)
       # generates ${arch}.tar.gz
-      # which contains like: /${arch}/OVMF_RELEASE_X64.fd
+      # which contains like: /OVMF_X64_RELEASE/OVMF.fd
       - name: Build OVMF and pack by arches
         run: |
           for arch in X64; do
-            [[ "${arch}" == "X64" ]] && a=x64
             for target in DEBUG RELEASE; do
               for secure in FALSE TRUE; do
+                suffix=""
                 [[ "${secure}" == TRUE ]] && suffix=".secboot"
                 source edksetup.sh && build -p OvmfPkg/OvmfPkg${arch}.dsc \
                   -a "${arch}" -t GCC -b "${target}" -D SECURE_BOOT_ENABLE="${secure}"
-                mkdir -p ${a}
-                cp Build/Ovmf${arch}/${target}_GCC/FV/OVMF.fd ${a}/OVMF_${target}${suffix}.fd
-                cp Build/Ovmf${arch}/${target}_GCC/FV/OVMF_CODE.fd ${a}/OVMF_${target}${suffix}.code
-                cp Build/Ovmf${arch}/${target}_GCC/FV/OVMF_VARS.fd ${a}/OVMF_${target}${suffix}.vars
+                out=OVMF_${arch}_${target}${suffix}
+                mkdir -p ${out}
+                cp Build/Ovmf${arch}/${target}_GCC/FV/OVMF.fd ${out}/OVMF${suffix}.fd
+                cp Build/Ovmf${arch}/${target}_GCC/FV/OVMF_CODE.fd ${out}/OVMF_CODE${suffix}.fd
+                cp Build/Ovmf${arch}/${target}_GCC/FV/OVMF_VARS.fd ${out}/OVMF_VARS${suffix}.fd
+                mkdir -p output
+                tar czvf output/${out}.tar.gz ${out}
               done
             done
-            mkdir -p output
-            tar czvf output/${a}.tar.gz ${a}
           done
-          exit 1
+      - name: Output build time and tag
+        id: time
+        run: |
+          BUILT_AT="$(date +%s)"
+          echo "time=${BUILT_AT}" >> "$GITHUB_OUTPUT"
+          echo "Build time: ${BUILT_AT}"
+          echo "Build tag: ${{ needs.check.outputs.tag }}"
+      - name: Checkout current repository
+        uses: actions/checkout@v4
+        with:
+          path: meta
+      - name: Write time and tag and push
+        id: record
+        env:
+          TIME: ${{ steps.time.outputs.time }}
+          TAG: ${{ needs.check.outputs.tag }}
+        run: |
+          echo "$TIME" > meta/time
+          echo "$TAG" > meta/tag
+          git -C meta add time tag
+          git -C meta diff --cached --quiet || git -C meta commit -m "Record build time and tag"
+          git -C meta push
+          echo "ref=$(git -C meta rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.check.outputs.tag }}
+          target_commitish: ${{ steps.record.outputs.ref }}
           files: output/*.tar.gz
           fail_on_unmatched_files: true
