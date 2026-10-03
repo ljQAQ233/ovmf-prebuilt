@@ -1,6 +1,9 @@
 name: build stable-edk2-ver ovmf
 run-name: check-build
 on:
+  push:
+    paths:
+      - '.github/workflows/**'
   schedule:
     # min hour day mon wday
     - cron: '24 3 1,16,28 * *'
