@@ -55,7 +55,7 @@ jobs:
       - name: Install essential compilers or softwares
         run: |
           sudo apt-get update
-          sudo apt-get install make gcc g++ nasm
+          sudo apt-get install make gcc g++ nasm iasl
           sudo apt-get install python3 python-is-python3 uuid-dev
       - name: Build BaseTools for Edk2 project
         run: |
