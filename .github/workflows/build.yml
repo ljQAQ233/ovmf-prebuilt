@@ -72,9 +72,9 @@ jobs:
                 source edksetup.sh && build -p OvmfPkg/OvmfPkg${arch}.dsc \
                   -a "${arch}" -t GCC -b "${target}" -D SECURE_BOOT_ENABLE="${secure}"
                 mkdir -p ${a}
-                cp Build/OvmfPkg/${target}_GCC/FV/OVMF.fd ${a}/OVMF_${target}_${arch}${suffix}.fd
-                cp Build/OvmfPkg/${target}_GCC/FV/OVMF_CODE.fd ${a}/OVMF_${target}_${arch}${suffix}.code
-                cp Build/OvmfPkg/${target}_GCC/FV/OVMF_VARS.fd ${a}/OVMF_${target}_${arch}${suffix}.vars
+                cp Build/Ovmf${arch}/${target}_GCC/FV/OVMF.fd ${a}/OVMF_${target}${suffix}.fd
+                cp Build/Ovmf${arch}/${target}_GCC/FV/OVMF_CODE.fd ${a}/OVMF_${target}${suffix}.code
+                cp Build/Ovmf${arch}/${target}_GCC/FV/OVMF_VARS.fd ${a}/OVMF_${target}${suffix}.vars
               done
             done
             mkdir -p output
